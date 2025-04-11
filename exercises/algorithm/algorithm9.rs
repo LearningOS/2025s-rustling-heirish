@@ -2,8 +2,6 @@
 	heap
 	This question requires you to implement a binary heap function
 */
-// I AM NOT DONE
-
 use std::cmp::Ord;
 use std::default::Default;
 
@@ -23,7 +21,8 @@ where
     pub fn new(comparator: fn(&T, &T) -> bool) -> Self {
         Self {
             count: 0,
-            items: vec![T::default()],
+            //items: vec![T::default()],
+            items: vec![],
             comparator,
         }
     }
@@ -38,6 +37,30 @@ where
 
     pub fn add(&mut self, value: T) {
         //TODO
+        self.items.push(value);
+        self.count += 1;
+
+        self.swim(self.count-1);    
+    }
+
+    fn swim(&mut self, idx:usize) {
+        let mut curr_idx = idx;
+        let mut parent_idx = self.parent_idx(curr_idx);
+        while curr_idx> 0 && (self.comparator)(&self.items[curr_idx], &self.items[parent_idx]) {
+            self.items.swap(curr_idx, parent_idx);
+            curr_idx = parent_idx;
+            parent_idx = self.parent_idx(curr_idx);
+        }
+    }
+
+    fn sink(&mut self, idx:usize) {
+        let mut curr_idx = idx;
+        let mut child_to_switch = self.smallest_child_idx(curr_idx);
+        while child_to_switch < self.count && !(self.comparator)(&self.items[curr_idx], &self.items[child_to_switch]){
+            self.items.swap(curr_idx, child_to_switch);
+            curr_idx = child_to_switch;
+            child_to_switch = self.smallest_child_idx(curr_idx);
+        }
     }
 
     fn parent_idx(&self, idx: usize) -> usize {
@@ -45,20 +68,35 @@ where
     }
 
     fn children_present(&self, idx: usize) -> bool {
-        self.left_child_idx(idx) <= self.count
+        //self.left_child_idx(idx) <= self.count
+        self.left_child_idx(idx) < self.count
     }
 
     fn left_child_idx(&self, idx: usize) -> usize {
-        idx * 2
+        //idx * 2
+        idx*2 + 1
     }
 
     fn right_child_idx(&self, idx: usize) -> usize {
         self.left_child_idx(idx) + 1
     }
 
+    //used for sinking
+    //actually get the next target child accroding to comparator
+    //if it's MaxHeap, then get the bigger value child
+    //if it's MinHeap, then get the smaller value child
     fn smallest_child_idx(&self, idx: usize) -> usize {
         //TODO
-		0
+        if self.count <= self.right_child_idx(idx) {
+            return self.left_child_idx(idx);
+        }
+
+        let (left_child_idx, right_child_idx) = (self.left_child_idx(idx), self.right_child_idx(idx));
+        if (self.comparator)(&self.items[left_child_idx], &self.items[right_child_idx]) {
+            left_child_idx
+        } else {
+            right_child_idx
+        }
     }
 }
 
@@ -83,9 +121,17 @@ where
 {
     type Item = T;
 
+    //pop from root, change self.items
     fn next(&mut self) -> Option<T> {
         //TODO
-		None
+        if self.count == 0 {
+            return None
+        }
+
+        let top = self.items.swap_remove(0);
+        self.count -=1;
+        self.sink(0);
+        Some(top)
     }
 }
 
